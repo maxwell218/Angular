@@ -6,9 +6,7 @@
 
 // Représente une carte de jeu
 export class Carte {
-    readonly sorteEnMot:string[] = ['pique', 'trèfle', 'carreau', 'coeur'];
-    readonly valeurEnMot:string[] = ['deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'valet', 'dame', 'roi', 'as'];
-    sorte:number;
+    sorte?:number;
     valeur:number;
 
     constructor(sorte:number, valeur:number) {

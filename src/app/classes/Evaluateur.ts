@@ -6,18 +6,22 @@ import { Carte } from './Carte';
 
 // Permet d'évaluer la valeur d'une main de poker
 export class Evaluateur {
-    readonly QUINTE_MIN = 4;
+    readonly sorteEnMot:string[] = ['pique', 'trèfle', 'carreau', 'coeur'];
+    readonly valeurEnMot:string[] = ['deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'valet', 'dame', 'roi', 'as'];
     readonly VALEUR_PAIRE = 100;
     readonly VALEUR_DOUBLE_PAIRE = 200;
     readonly VALEUR_BRELAN = 300;
     readonly VALEUR_QUINTE = 400;
-    readonly VALEUR_COULEUR = 500;
+    readonly VALEUR_FLUSH = 500;
     readonly VALEUR_FULL = 600;
     readonly VALEUR_CARRE = 700;
     readonly VALEUR_QUINTE_FLUSH = 800;
+    readonly VALEUR_QUINTE_ROYALE = 900;
 
     cartes:Carte[] = [];
+    cartesGagnantes:Carte[] = [];
     sorteFlush:number = 0;
+    titreGagnant:string = '';
 
     constructor(cartesAEvaluer:Carte[]) {
         this.cartes = cartesAEvaluer;
@@ -43,127 +47,251 @@ export class Evaluateur {
                 }
             }
         }
-
-        this.cartes.reverse();
     }
 
     // Source : https://github.com/danielpaz6/Poker-Hand-Evaluator
     getValeur():number {
+        // On doit avoir une main de 7 cartes
+        if (this.cartes.length < 7) {
+            return 0;
+        }
+
         this.trierMain();
 
-        let valeur = 0;
-        let unAs = false;
+        let compteurDoublon = 1, compteurSuite = 1, compteurSuiteMax = 1;
+        let valeurCartePlusHaute = -1, valeurCarteDoublon = -1, valeurSuiteMax = -1;
 
-        // Variable pour les flushs
-        let sortes:Sorte = {pique: 0, trefle: 0, carreau: 0, coeur: 0};
+        let valeurCarteCourante = -1, valeurCarteProchaine = -1;
 
-        // Variables pour les quintes
-        let compteurQuinte = 0;
-        let compteurQuinteMax = 0;
-        let valeursDeLaQuinte = [];
+        valeurCartePlusHaute = this.cartes[this.cartes.length - 1].valeur;
 
-        // Variable pour les paires
         let doublons:Doublon[] = [];
 
-        for (let i = 0; i < this.cartes.length; i++) {
-            // As ?
-            if (this.cartes[i].valeur == 13) {
-                unAs = true;
+        for (let i = 0; i < 6; i++) {
+            // Params carte courante
+            valeurCarteCourante = this.cartes[i].valeur;
+
+            // Params carte prochaine
+            valeurCarteProchaine = this.cartes[i + 1].valeur;
+
+            // Doublons ?
+            if (valeurCarteCourante == valeurCarteProchaine) {
+                compteurDoublon++;
+                valeurCarteDoublon = valeurCarteCourante;
+            } else if (compteurDoublon > 1) {
+                doublons.push({valeur: valeurCarteDoublon, compteur: compteurDoublon});
+                compteurDoublon = 1;
             }
 
-            // Flush
-            switch(this.cartes[i].sorte) {
-                case 1: 
-                    sortes.pique++;
-                    break;
-                case 2:
-                    sortes.trefle++;
-                    break;
-                case 3:
-                    sortes.carreau++;
-                    break;
-                case 4:
-                    sortes.coeur++;
-                    break;
+            // Suite ?
+            if (valeurCarteCourante + 1 == valeurCarteProchaine) {
+                compteurSuite++;
+            } else if (valeurCarteCourante != valeurCarteProchaine) {
+                if (compteurSuite > compteurSuiteMax) {
+                    compteurSuiteMax = compteurSuite;
+                    valeurSuiteMax = valeurCarteCourante;
+                }
+
+                compteurSuite = 1;
+            }
+        }
+
+        // La dernière carte
+        // On regarde pour la dernière carte si elle rentre dans la suite
+        if (compteurSuite > compteurSuiteMax) {
+            compteurSuiteMax = compteurSuite;
+            valeurSuiteMax = valeurCarteProchaine;
+        }
+        // Et si elle rentre dans un doublon
+        if (compteurDoublon > 1) {
+            doublons.push({valeur: valeurCarteProchaine, compteur: compteurDoublon})
+        }
+
+        // Calcul des points de la main (5 cartes sur 7 au hold'em) en ordre des meilleurss mains au moins meilleures
+        // QUINTE ROYALE (constante, suite de 10 - As de la même sorte)
+        // Source : https://en.wikipedia.org/wiki/List_of_poker_hands#Straight_flush
+        if (this.cartes[6].valeur == 12 && this.cartes[5].valeur == 11 && this.cartes[4].valeur == 10 && this.cartes[3].valeur == 9 && this.cartes[2].valeur == 8) {
+            for (let i = 2; i < this.cartes.length; i++) {
+                if (this.cartes[i].sorte == this.cartes[6].sorte) {
+                    this.cartesGagnantes.push(this.cartes[i]);
+                }
             }
 
-            if (i < this.cartes.length - 1) {
-                // Quintes
-                // Si la valeur de la carte courante suit celle de la prochaine carte
-                if (this.cartes[i].valeur == this.cartes[i + 1].valeur - 1) {
-                    valeursDeLaQuinte.push(this.cartes[i].valeur);
-                    compteurQuinte++;
-                } else {
-                    compteurQuinteMax = compteurQuinte;
-                    if (compteurQuinteMax <= this.QUINTE_MIN - 1) {
-                        valeursDeLaQuinte = [];
+            if (this.cartesGagnantes.length == 5) {
+                this.titreGagnant = 'Quinte royale';
+                return this.VALEUR_QUINTE_ROYALE;
+            }
+
+            // Si on arrive ici, on a pas de quinte royale et on vide alors le tableau des cartes gagnante
+            this.cartesGagnantes = [];
+
+        } else {
+            // Quinte flush
+            for (let s = 0; s < this.sorteEnMot.length; s++) {
+                // Crée un tableau pour chaque sorte de carte
+                let cartesParSorte = this.cartes.filter(c => c.sorte == s);
+
+                // Si une sorte atteint 5 cartes, on a au moins une flush
+                if (cartesParSorte.length >= 5) {
+                    let compteurCartesQuiSeSuivent = 1, compteurMax = 1, valeurDerniereCarte = -1;
+                    for (let i = 0; i < cartesParSorte.length - 1; i++) {
+                        // On compare les deux cartes (position courante et celle d'après) 
+                        if (cartesParSorte[i].valeur + 1 == cartesParSorte[i + 1].valeur) {
+                            compteurCartesQuiSeSuivent++;
+                            valeurDerniereCarte = cartesParSorte[i + 1].valeur;
+                            this.cartesGagnantes.push(cartesParSorte[i]);
+                        } else {
+                            compteurMax = compteurCartesQuiSeSuivent;
+                            compteurCartesQuiSeSuivent = 1;
+                            this.cartesGagnantes = [];
+                        }
                     }
-                    compteurQuinte = 0;
+
+                    // Cas particulier : 2, 3, 4, 5, As, As, AS
+                    // On doit regarder si les 3 dernières cartes sont des as et s'ils sont de la même sorte que les autres cartes
+                    if (compteurCartesQuiSeSuivent >= 5 || (compteurMax == 4 && valeurDerniereCarte == 5 && cartesParSorte[cartesParSorte.length - 1].valeur == 12)) {
+                        this.titreGagnant = 'Quinte flush';
+                        return this.VALEUR_QUINTE_FLUSH + valeurDerniereCarte;
+                    } 
                 }
 
-                // Si nous avons une quinte de 4 qui commence par un 2, on regarde si on a un as et on incremente le compteur de quinte
-                if (compteurQuinteMax == this.QUINTE_MIN && valeursDeLaQuinte.includes(2) && unAs) {
-                    compteurQuinteMax++;
+            }
+
+            // On met les doublons en ordre descendant de valeur
+            doublons = doublons.sort((a, b) => {
+                return b.compteur - a.compteur;
+            });
+
+            // Carré
+            if (doublons.length > 0 && doublons[0].compteur == 4) {
+                this.titreGagnant = 'Carré';
+                for (let s = 0; s < this.sorteEnMot.length; s++) {
+                    this.cartesGagnantes.push({ valeur:doublons[0].valeur, sorte:s });
+                }
+                // Valeur de la cinquième et dernière carte
+                let valeurDerniereCarte = -1;
+                for (let i = this.cartes.length - 1; i >= 0; i++) {
+                    if (this.cartes[i].valeur != doublons[0].valeur) {
+                        valeurDerniereCarte = this.cartes[i].valeur;
+                        break;
+                    }
+                }
+                return this.VALEUR_CARRE + doublons[0].valeur + this.cartes[this.cartes.length - 1].valeur + valeurDerniereCarte;
+            }
+
+            // Full
+            // Cas particulier : 2 paires de 2 cartes et une paire de trois carte
+            else if (doublons.length > 2 && doublons[0].compteur == 3 && doublons[1].compteur == 2 && doublons[2].compteur == 2) {
+                this.titreGagnant = 'Full';
+                let valeurCartePlusGrande = Math.max(doublons[1].valeur, doublons[2].valeur);
+                for (let i = 0; i < 3; i++) {
+                    this.cartesGagnantes.push({valeur:doublons[0].valeur})
+                }
+                for (let i = 0; i < 2; i++) {
+                    this.cartesGagnantes.push({valeur:valeurCartePlusGrande});
+                }
+                // Valeur de la cinquième et dernière carte
+                let valeurDerniereCarte = -1;
+                for (let i = this.cartes.length - 1; i >= 0; i++) {
+                    if (this.cartes[i].valeur != doublons[0].valeur && this.cartes[i].valeur != valeurCartePlusGrande) {
+                        valeurDerniereCarte = this.cartes[i].valeur;
+                        break;
+                    }
+                }
+                return this.VALEUR_FULL + doublons[0].valeur + doublons[1].valeur + valeurCartePlusGrande;
+            }
+            // Cas particulier : 2 paires de 3 cartes, il faut trouver la meilleur combinaison
+            else if (doublons.length > 1 && doublons[0].compteur == 3 && doublons[1].compteur == 3) {
+                this.titreGagnant = 'Full';
+                let valeurCartePlusGrande = Math.max(doublons[0].valeur, doublons[1].valeur);
+                let valeurCartePlusPetite = Math.min(doublons[0].valeur, doublons[1].valeur);
+                for (let i = 0; i < 3; i++) {
+                    this.cartesGagnantes.push({valeur:valeurCartePlusGrande})
+                }
+                for (let i = 0; i < 2; i++) {
+                    this.cartesGagnantes.push({valeur:valeurCartePlusPetite});
+                }
+                // Valeur de la cinquième et dernière carte
+                let valeurDerniereCarte = -1;
+                for (let i = this.cartes.length - 1; i >= 0; i++) {
+                    if (this.cartes[i].valeur != valeurCartePlusGrande) {
+                        valeurDerniereCarte = this.cartes[i].valeur;
+                        break;
+                    }
+                }
+                return this.VALEUR_FULL + doublons[0].valeur + doublons[1].valeur + valeurDerniereCarte;
+            } 
+            else if (doublons.length > 1 && doublons[0].compteur == 3 && doublons[1].compteur == 2) {
+                this.titreGagnant = 'Full';
+                for (let i = 0; i < 3; i++) {
+                    this.cartesGagnantes.push({valeur:doublons[0].valeur})
+                }
+                for (let i = 0; i < 2; i++) {
+                    this.cartesGagnantes.push({valeur:doublons[1].valeur});
+                }
+                // Valeur de la cinquième et dernière carte
+                let valeurDerniereCarte = -1;
+                for (let i = this.cartes.length - 1; i >= 0; i++) {
+                    if (this.cartes[i].valeur != doublons[0].valeur && this.cartes[i].valeur != doublons[1].valeur) {
+                        valeurDerniereCarte = this.cartes[i].valeur;
+                        break;
+                    }
+                }
+                return this.VALEUR_FULL + doublons[0].valeur + doublons[1].valeur + valeurDerniereCarte;
+            } else {
+                 // Flush
+                for (let s = 0; s < this.sorteEnMot.length; s++) {
+                    // Crée un tableau pour chaque sorte de carte
+                    let cartesParSorte = this.cartes.filter(c => c.sorte == s);
+    
+                    // Si une sorte atteint 5 cartes, on a au moins une flush
+                    if (cartesParSorte.length >= 5) {
+                        this.titreGagnant = 'Flush';
+                        // On ajoute les 5 dernières cartes dans le tableau des cartes gagnantes
+                        this.cartesGagnantes = cartesParSorte.filter((u, i) => i >= 2);
+                        return this.VALEUR_FLUSH + this.cartesGagnantes[4].valeur;
+                    }
                 }
 
-                // Doublons
-                // Si la carte courante à la même valeur que la prochaine carte
-                if (this.cartes[i].valeur == this.cartes[i + 1].valeur) {
-
-                    // On ajoute la valeur de la carte et on incremente son compte si elle existe dans le tableau de doublon
-                    let nouveauDoublon = true;
-                    if (doublons.length > 0) {
-                        // On parcours le tableau a la recherche d'une valeur existante
-                        doublons.forEach(doub => {
-                            // Un doublon avec une valeur existante
-                            if (doub.valeur == this.cartes[i].valeur) {
-                                doub.compteur++;
-                                nouveauDoublon = false;
+                // Quinte
+                if (compteurSuiteMax >= 5) {
+                    this.titreGagnant = 'Quinte';
+                    for (let i = valeurSuiteMax; i > compteurSuiteMax; i--) {
+                        this.cartesGagnantes.push({valeur: i});
+                    }
+                    return this.VALEUR_QUINTE + this.cartesGagnantes[0].valeur;
+                }
+                // Cas particulier : 2, 3, 4, 5, As, As, AS
+                // On doit regarder si les 3 dernières cartes sont des as et s'ils sont de la même sorte que les autres cartes
+                else if (compteurSuiteMax == 4 && valeurSuiteMax == 5 && valeurCartePlusHaute == 12) {
+                    this.titreGagnant = 'Quinte';
+                    this.cartesGagnantes.push({valeur: 12});
+                    for (let i = valeurSuiteMax; i > 1; i--) {
+                        this.cartesGagnantes.push({valeur: i});
+                    }
+                    return this.VALEUR_QUINTE + valeurSuiteMax;
+                } 
+                // Brelan
+                else if (compteurDoublon > 0 && doublons[0].compteur == 3) {
+                    this.titreGagnant = 'Brelan';
+                    // Valeur de la cinquième et dernière carte
+                    let valeurDernieresCartes = [];
+                    for (let i = this.cartes.length - 1; i >= 0; i++) {
+                        if (this.cartes[i].valeur != doublons[0].valeur ) {
+                            valeurDernieresCartes.push(this.cartes[i].valeur);
+                            if (valeurDernieresCartes.length >= 2) {
+                                break;
                             }
-                        }); 
+                        }
                     }
-
-                    // Sinon, il n'y a pas de doublon existant, on l'ajoute au tableau
-                    if (nouveauDoublon) {
-                        let doub:Doublon = { valeur: this.cartes[i].valeur, compteur: 1 };
-                        doublons.push(doub);
-                    }
+                    return this.VALEUR_BRELAN + valeurDernieresCartes[0] + valeurDernieresCartes[1];
+                }
+                // 2 Paires
+                else if (compteurDoublon > 1 && doublons[0].compteur == 2 && doublons[1].compteur == 2) {
+                    
                 }
             }
         }
-        
-        // Valeurs
-        // Quinte flush
-        if ((sortes.pique >= 5 || sortes.trefle >= 5 || sortes.carreau >= 5 || sortes.trefle >= 5) && compteurQuinteMax == 5) {
-            valeur += this.VALEUR_QUINTE_FLUSH;
-        } 
-        // Carré, Full
-        else if (doublons.length > 0) {
-            let deux = false;
-            let trois = false;
-            for (let doub of doublons) {
-                if (doub.compteur == 4) {
-                    valeur += this.VALEUR_CARRE;
-                    break;
-                } else if (doub.compteur == 3) {
-                    if (doub.compteur == 3 && deux) {
-                        valeur += this.VALEUR_FULL;
-                    }
-                }
-            }
-        }
-        // Couleur
-        // Quinte
-        // Brelan
-        // Deux paires
-        // Paire
-
-        // Carte la plus haute
-        this.cartes.forEach(carte => {
-            valeur += carte.valeur
-        });
-
-        return valeur;
     }
 
     convertirValeurEnFrancais(valeur:number) {
