@@ -71,11 +71,10 @@ export class Ronde {
         let src = 'assets/images/';
         let joueursDiv = document.getElementsByClassName('joueur');
         for (let i = 0; i < joueursDiv.length; i++) {
-            let cartes = joueursDiv[i].getElementsByTagName('span');
-            console.log(cartes);
-            console.log('test');
+            let cartes = joueursDiv[i].querySelector('span');
+            cartes!.innerHTML = '';
             for (let c = 0; c < this.NB_CARTES_PAR_JOUEURS; c++) {
-                cartes[i].innerHTML += `<img class="carte" src="${src + this.joueurs[i].main[c].sorte + '_' + this.joueurs[i].main[c].valeur}.png"/>`;
+                cartes!.innerHTML += `<img class="carte" src="${src + this.joueurs[i].main[c].sorte + '_' + this.joueurs[i].main[c].valeur}.png"/>`;
             }
         }
     }
