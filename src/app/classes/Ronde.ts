@@ -67,12 +67,15 @@ export class Ronde {
     }
 
     genererHTML() {
+        console.log(this.joueurs[0].main[0].sorte);
         let src = 'assets/images/';
         let joueursDiv = document.getElementsByClassName('joueur');
         for (let i = 0; i < joueursDiv.length; i++) {
-            let cartes = joueursDiv[i].getElementsByClassName('carte');
-            for (let c = 0; c < this.NB_CARTES_PAR_JOUEURS; i++) {
-                cartes[c].innerHTML = `<img src="${src + this.joueurs[i].main[c].sorte + '_' + this.joueurs[i].main[c].valeur}.png"/>`;
+            let cartes = joueursDiv[i].getElementsByTagName('span');
+            console.log(cartes);
+            console.log('test');
+            for (let c = 0; c < this.NB_CARTES_PAR_JOUEURS; c++) {
+                cartes[i].innerHTML += `<img class="carte" src="${src + this.joueurs[i].main[c].sorte + '_' + this.joueurs[i].main[c].valeur}.png"/>`;
             }
         }
     }

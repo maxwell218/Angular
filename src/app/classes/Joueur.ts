@@ -14,6 +14,10 @@ export class Joueur {
         cartes.forEach(carte => {
             this.main.push(carte);
         });
+
+        this.main.sort((a, b) => {
+            return b.valeur - a.valeur;
+        })
     }
 
     reinitialiserJoueur() {
