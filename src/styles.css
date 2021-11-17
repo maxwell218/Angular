@@ -1,1 +1,87 @@
-/* You can add global styles to this file, and also import other style files */
+html body {
+    background: rgba(29, 128, 50, 0.781);
+}
+
+.header {
+    width: 100%;
+    text-align: center;
+    display: table;
+    table-layout: fixed;
+    margin-bottom: 15px;
+    background-color: black;
+}
+
+.header > * {
+    color: white;
+    font-size: 2em;
+}
+
+.header .header-wrapper h2 {
+    margin-top: 15px;
+}
+
+.header .header-wrapper {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.header span {
+    font-size: 0.5em;
+}
+
+.container .row > * {
+    padding-right: 0;
+    padding-left: 0;
+    margin-right: 0;
+    margin-left: 0;
+}
+
+.container {
+    text-align: center;
+}
+
+.row:not(.header) {
+    min-height: 120px;
+    margin-bottom: 15px;
+    background-color: rgba(2, 70, 17, 0.74);
+    border-radius: 20px;
+    padding: 15px;
+    color: white;
+    font-weight: 600;
+    --bs-gutter-x: 0;
+    border: 3px dotted rgb(0, 65, 40);
+    box-shadow: 0px 3px 5px 3px #14141498;
+}
+
+#btnCartes {
+    margin-bottom: 15px;
+    margin-top: 30px;
+    border: 3px dotted rgb(65, 0, 0);
+    border-radius: 20px;
+    background-color: rgb(216, 42, 42);
+    font-weight: 600;
+}
+
+#btnCartes:hover {
+    background-color: rgb(255, 255, 255);
+    border: 3px dotted rgb(0, 0, 0);
+    color:black;
+}
+
+.joueur span {
+    text-align: left;
+    margin-top: 15px;
+}
+
+.carte {
+    height: 100px;
+    width: auto;
+    image-rendering: -webkit-optimize-contrast;
+    border: 2px white black;
+    border-radius: 5px;
+    box-shadow: 0px 2px 5px 2px #14141498;
+}
+
+.carte:not(:last-child) {
+    margin-right: 5px;
+}

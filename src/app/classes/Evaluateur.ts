@@ -121,10 +121,6 @@ export class Evaluateur {
                 this.titreGagnant = 'Quinte royale';
                 return this.VALEUR_QUINTE_ROYALE;
             }
-
-            // Si on arrive ici, on a pas de quinte royale et on vide alors le tableau des cartes gagnante
-            this.cartesGagnantes = [];
-
         } else {
             // Quinte flush
             for (let s = 0; s < this.sorteEnMot.length; s++) {
@@ -170,7 +166,7 @@ export class Evaluateur {
                 }
                 // Valeur de la cinquième et dernière carte
                 let valeurDerniereCarte = -1;
-                for (let i = this.cartes.length - 1; i >= 0; i++) {
+                for (let i = this.cartes.length - 1; i >= 0; i--) {
                     if (this.cartes[i].valeur != doublons[0].valeur) {
                         valeurDerniereCarte = this.cartes[i].valeur;
                         break;
@@ -192,7 +188,7 @@ export class Evaluateur {
                 }
                 // Valeur de la cinquième et dernière carte
                 let valeurDerniereCarte = -1;
-                for (let i = this.cartes.length - 1; i >= 0; i++) {
+                for (let i = this.cartes.length - 1; i >= 0; i--) {
                     if (this.cartes[i].valeur != doublons[0].valeur && this.cartes[i].valeur != valeurCartePlusGrande) {
                         valeurDerniereCarte = this.cartes[i].valeur;
                         break;
@@ -213,7 +209,7 @@ export class Evaluateur {
                 }
                 // Valeur de la cinquième et dernière carte
                 let valeurDerniereCarte = -1;
-                for (let i = this.cartes.length - 1; i >= 0; i++) {
+                for (let i = this.cartes.length - 1; i >= 0; i--) {
                     if (this.cartes[i].valeur != valeurCartePlusGrande) {
                         valeurDerniereCarte = this.cartes[i].valeur;
                         break;
@@ -231,7 +227,7 @@ export class Evaluateur {
                 }
                 // Valeur de la cinquième et dernière carte
                 let valeurDerniereCarte = -1;
-                for (let i = this.cartes.length - 1; i >= 0; i++) {
+                for (let i = this.cartes.length - 1; i >= 0; i--) {
                     if (this.cartes[i].valeur != doublons[0].valeur && this.cartes[i].valeur != doublons[1].valeur) {
                         valeurDerniereCarte = this.cartes[i].valeur;
                         break;
@@ -272,38 +268,133 @@ export class Evaluateur {
                     return this.VALEUR_QUINTE + valeurSuiteMax;
                 } 
                 // Brelan
-                else if (compteurDoublon > 0 && doublons[0].compteur == 3) {
+                else if (doublons.length > 0 && doublons[0].compteur == 3) {
                     this.titreGagnant = 'Brelan';
-                    // Valeur de la cinquième et dernière carte
+                    // Valeur des dernières cartes
                     let valeurDernieresCartes = [];
-                    for (let i = this.cartes.length - 1; i >= 0; i++) {
-                        if (this.cartes[i].valeur != doublons[0].valeur ) {
+                    for (let i = this.cartes.length - 1; i >= 0; i--) {
+                        if (this.cartes[i].valeur != doublons[0].valeur) {
                             valeurDernieresCartes.push(this.cartes[i].valeur);
-                            if (valeurDernieresCartes.length >= 2) {
-                                break;
-                            }
+                        }
+                        if (valeurDernieresCartes.length >= 3) {
+                            break;
                         }
                     }
                     return this.VALEUR_BRELAN + valeurDernieresCartes[0] + valeurDernieresCartes[1];
                 }
                 // 2 Paires
-                else if (compteurDoublon > 1 && doublons[0].compteur == 2 && doublons[1].compteur == 2) {
+                else if (doublons.length > 1 && doublons[0].compteur == 2 && doublons[1].compteur == 2) {
+                    this.titreGagnant = 'Deux paires';
                     
+                    // Cas particulier : 3 paires de 2 cartes, on doit trouver les deux meilleures paires
+                    if (doublons.length > 2 && doublons[2].compteur == 2) {
+                        let valeursTroisPaires:number[] = [doublons[0].valeur, doublons[1].valeur, doublons[2].valeur];
+                        valeursTroisPaires.sort((a, b) => {
+                            return b - a;
+                        });
+                        for (let i = 0; i < 2; i++) {
+                            this.cartesGagnantes.push({valeur: valeursTroisPaires[0]});
+                        }
+                        for (let i = 0; i < 2; i++) {
+                            this.cartesGagnantes.push({valeur: valeursTroisPaires[1]});
+                        }
+                    } else {
+                        for (let i = 0; i < 2; i++) {
+                            this.cartesGagnantes.push({valeur: doublons[0].valeur});
+                        }
+                        for (let i = 0; i < 2; i++) {
+                            this.cartesGagnantes.push({valeur: doublons[1].valeur});
+                        }
+                    }
+
+                    // Valeur de la cinquième et dernière carte
+                    let valeurDerniereCarte = -1;
+                    for (let i = this.cartes.length - 1; i >= 0; i--) {
+                        if (this.cartes[i].valeur != this.cartesGagnantes[0].valeur && this.cartes[i].valeur != this.cartesGagnantes[2].valeur) {
+                            valeurDerniereCarte = this.cartes[i].valeur;
+                            break;
+                        }
+                    }
+
+                    return this.VALEUR_DOUBLE_PAIRE + this.cartesGagnantes[0].valeur + this.cartesGagnantes[2].valeur + valeurDerniereCarte;
+                }
+                // 1 Paire
+                else if (doublons.length > 0 && doublons[0].compteur == 2) {
+                    this.titreGagnant = 'Paire';
+                    for (let i = 0; i < 2; i++) {
+                        this.cartesGagnantes.push({valeur: doublons[0].valeur});
+                    }
+                    // Valeur des dernières cartes
+                    let valeurDernieresCartes = [];
+                    for (let i = this.cartes.length - 1; i >= 0; i--) {
+                        if (this.cartes[i].valeur != doublons[0].valeur ) {
+                            valeurDernieresCartes.push(this.cartes[i].valeur);
+                        }
+                        if (valeurDernieresCartes.length >= 3) {
+                            break;
+                        }
+                    }
+                    return this.VALEUR_PAIRE + doublons[0].valeur + valeurDernieresCartes.reduce((a, b) => a + b, 0);
+                }
+                // Carte la plus haute
+                else {
+                    this.titreGagnant = 'Carte haute';
+                    // Valeur des dernières cartes
+                    let valeurDernieresCartes = [];
+                    for (let i = this.cartes.length - 1; i >= 0; i--) {
+                        valeurDernieresCartes.push(this.cartes[i].valeur);
+                        if (valeurDernieresCartes.length >= 5) {
+                            break;
+                        }
+                    }
+                    return valeurDernieresCartes.reduce((a, b) => a + b, 0);
                 }
             }
         }
+        return 0;
     }
 
-    convertirValeurEnFrancais(valeur:number) {
+    convertirValeurEnFrancais(valeur:number):string {
+        // Quinte royale
+        if (valeur >= this.VALEUR_QUINTE_ROYALE) {
+            return this.titreGagnant;
+        }
         // Quinte flush
+        else if (valeur >= this.VALEUR_QUINTE_FLUSH) {
+            return this.titreGagnant;
+        }
         // Carré
+        else if (valeur >= this.VALEUR_CARRE) {
+            return this.titreGagnant;
+        }
         // Full
+        else if (valeur >= this.VALEUR_FULL) {
+            return this.titreGagnant;
+        }
         // Couleur
+        else if (valeur >= this.VALEUR_FLUSH) {
+            return this.titreGagnant;
+        }
         // Quinte
+        else if (valeur >= this.VALEUR_QUINTE) {
+            return this.titreGagnant;
+        }
         // Brelan
+        else if (valeur >= this.VALEUR_BRELAN) {
+            return this.titreGagnant;
+        }
         // Deux paires
+        else if (valeur >= this.VALEUR_DOUBLE_PAIRE) {
+            return this.titreGagnant;
+        }
         // Paire
+        else if (valeur >= this.VALEUR_PAIRE) {
+            return this.titreGagnant;
+        }
         // Carte la plus haute
+        else {
+            return this.titreGagnant;
+        }
     }
 }
 

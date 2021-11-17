@@ -9,7 +9,7 @@ export class Carte {
     sorte?:number;
     valeur:number;
 
-    constructor(sorte:number, valeur:number) {
+    constructor(sorte:number = 0, valeur:number = 0) {
         this.sorte = sorte;
         this.valeur = valeur;
     }

@@ -14,5 +14,11 @@ export class Joueur {
         cartes.forEach(carte => {
             this.main.push(carte);
         });
-    }    
+    }
+
+    reinitialiserJoueur() {
+        this.valeur = 0;
+        this.valeurEnFrancais = '';
+        this.main = [];
+    }
 }
