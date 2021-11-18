@@ -148,7 +148,7 @@ export class Evaluateur {
                     if (compteurCartesQuiSeSuivent >= 5 || (compteurMax == 4 && valeurDerniereCarte == 5 && cartesParSorte[cartesParSorte.length - 1].valeur == 12)) {
                         this.titreGagnant = 'Quinte flush';
                         return this.VALEUR_QUINTE_FLUSH + valeurDerniereCarte;
-                    } 
+                    }
                 }
 
             }
@@ -244,17 +244,20 @@ export class Evaluateur {
                     if (cartesParSorte.length >= 5) {
                         this.titreGagnant = 'Flush';
                         // On ajoute les 5 dernières cartes dans le tableau des cartes gagnantes
-                        this.cartesGagnantes = cartesParSorte.filter((u, i) => i >= 2);
-                        return this.VALEUR_FLUSH + this.cartesGagnantes[4].valeur;
+                        this.cartesGagnantes = cartesParSorte.filter((u, i) => i >= 0);
+                        return this.VALEUR_FLUSH + this.cartesGagnantes[0].valeur + this.cartesGagnantes[1].valeur + this.cartesGagnantes[2].valeur + this.cartesGagnantes[3].valeur + this.cartesGagnantes[4].valeur;
                     }
                 }
-
                 // Quinte
                 if (compteurSuiteMax >= 5) {
                     this.titreGagnant = 'Quinte';
-                    for (let i = valeurSuiteMax; i > compteurSuiteMax; i--) {
-                        this.cartesGagnantes.push({valeur: i});
+                    console.log(valeurSuiteMax + ' - ' + compteurSuiteMax);
+                    for (let i = valeurSuiteMax; i > 0; i--) {
+                        if (this.cartesGagnantes.length < 5) { 
+                            this.cartesGagnantes.push({valeur: i});
+                        }
                     }
+
                     return this.VALEUR_QUINTE + this.cartesGagnantes[0].valeur;
                 }
                 // Cas particulier : 2, 3, 4, 5, As, As, AS
@@ -266,20 +269,27 @@ export class Evaluateur {
                         this.cartesGagnantes.push({valeur: i});
                     }
                     return this.VALEUR_QUINTE + valeurSuiteMax;
-                } 
+                }
                 // Brelan
                 else if (doublons.length > 0 && doublons[0].compteur == 3) {
                     this.titreGagnant = 'Brelan';
+                    for (let i = 0; i < 3; i++) {
+                        this.cartesGagnantes.push({valeur: doublons[0].valeur});
+                    }
                     // Valeur des dernières cartes
                     let valeurDernieresCartes = [];
-                    for (let i = this.cartes.length - 1; i >= 0; i--) {
+                    for (let i = this.cartes.length - 1; i >= 2; i--) {
                         if (this.cartes[i].valeur != doublons[0].valeur) {
                             valeurDernieresCartes.push(this.cartes[i].valeur);
                         }
                         if (valeurDernieresCartes.length >= 3) {
                             break;
                         }
+
                     }
+                    valeurDernieresCartes.forEach(v => {
+                        this.cartesGagnantes.push({valeur:v});
+                    });
                     return this.VALEUR_BRELAN + valeurDernieresCartes[0] + valeurDernieresCartes[1];
                 }
                 // 2 Paires
@@ -315,7 +325,7 @@ export class Evaluateur {
                             break;
                         }
                     }
-
+                    this.cartesGagnantes.push({valeur:valeurDerniereCarte});
                     return this.VALEUR_DOUBLE_PAIRE + this.cartesGagnantes[0].valeur + this.cartesGagnantes[2].valeur + valeurDerniereCarte;
                 }
                 // 1 Paire
@@ -327,13 +337,16 @@ export class Evaluateur {
                     // Valeur des dernières cartes
                     let valeurDernieresCartes = [];
                     for (let i = this.cartes.length - 1; i >= 0; i--) {
-                        if (this.cartes[i].valeur != doublons[0].valeur ) {
+                        if (this.cartes[i].valeur != doublons[0].valeur) {
                             valeurDernieresCartes.push(this.cartes[i].valeur);
                         }
                         if (valeurDernieresCartes.length >= 3) {
                             break;
                         }
                     }
+                    valeurDernieresCartes.forEach(v => {
+                        this.cartesGagnantes.push({valeur:v});
+                    });
                     return this.VALEUR_PAIRE + doublons[0].valeur + valeurDernieresCartes.reduce((a, b) => a + b, 0);
                 }
                 // Carte la plus haute
@@ -347,6 +360,9 @@ export class Evaluateur {
                             break;
                         }
                     }
+                    valeurDernieresCartes.forEach(v => {
+                        this.cartesGagnantes.push({valeur:v});
+                    });
                     return valeurDernieresCartes.reduce((a, b) => a + b, 0);
                 }
             }
@@ -354,47 +370,18 @@ export class Evaluateur {
         return 0;
     }
 
-    convertirValeurEnFrancais(valeur:number):string {
-        // Quinte royale
-        if (valeur >= this.VALEUR_QUINTE_ROYALE) {
-            return this.titreGagnant;
-        }
-        // Quinte flush
-        else if (valeur >= this.VALEUR_QUINTE_FLUSH) {
-            return this.titreGagnant;
-        }
-        // Carré
-        else if (valeur >= this.VALEUR_CARRE) {
-            return this.titreGagnant;
-        }
-        // Full
-        else if (valeur >= this.VALEUR_FULL) {
-            return this.titreGagnant;
-        }
-        // Couleur
-        else if (valeur >= this.VALEUR_FLUSH) {
-            return this.titreGagnant;
-        }
-        // Quinte
-        else if (valeur >= this.VALEUR_QUINTE) {
-            return this.titreGagnant;
-        }
-        // Brelan
-        else if (valeur >= this.VALEUR_BRELAN) {
-            return this.titreGagnant;
-        }
-        // Deux paires
-        else if (valeur >= this.VALEUR_DOUBLE_PAIRE) {
-            return this.titreGagnant;
-        }
-        // Paire
-        else if (valeur >= this.VALEUR_PAIRE) {
-            return this.titreGagnant;
-        }
-        // Carte la plus haute
-        else {
-            return this.titreGagnant;
-        }
+    convertirValeurEnFrancais():string {
+        let message = '';
+        message += this.titreGagnant;
+        message += ' : ';
+        this.cartesGagnantes.forEach((carte, index, array) => {
+            if (index != array.length - 1) {
+                message += this.valeurEnMot[carte.valeur] + ', ';  
+            } else {
+                message += this.valeurEnMot[carte.valeur];  
+            }
+        })
+        return message.trim();
     }
 }
 

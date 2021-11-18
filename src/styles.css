@@ -36,10 +36,6 @@ html body {
     margin-left: 0;
 }
 
-.container {
-    text-align: center;
-}
-
 .row:not(.header) {
     min-height: 120px;
     margin-bottom: 15px;
@@ -68,7 +64,7 @@ html body {
     color:black;
 }
 
-.joueur span {
+.joueur span, .centre span {
     text-align: left;
     margin-top: 15px;
 }
@@ -84,4 +80,8 @@ html body {
 
 .carte:not(:last-child) {
     margin-right: 5px;
+}
+
+.valeur-francais, .gagnant {
+    text-align: right;
 }

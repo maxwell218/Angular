@@ -36,16 +36,12 @@ export class Ronde {
             let cartes = [];
             for (let i = 0; i < this.NB_CARTES_PAR_JOUEURS; i++) {
                 cartes.push(this.paquet.distribue());
-                
             }
             joueur.assignerCarte(cartes);
-            console.log(joueur.main);
-            
         });
 
-        console.log(this.joueurs[0].main[1]);
-
         // Flop
+        this.flop = [];
         for (let i = 0; i < this.NB_CARTES_FLOP; i++) {
             this.flop.push(this.paquet.distribue());
         }
@@ -53,29 +49,72 @@ export class Ronde {
         this.turn = this.paquet.distribue();
         this.river = this.paquet.distribue();
 
-        // TODO Evaluer et determiner le gagnant
-
+        this.evaluerMains();
+        this.determinerGagnant();
         this.genererHTML();
     }
 
     evaluerMains() {
-        
+        this.joueurs.forEach(j => {
+            let cartes = [];
+            cartes.push(... j.main);
+            cartes.push(... this.flop);
+            cartes.push(this.turn);
+            cartes.push(this.river);
+            let evaluateur = new Evaluateur(cartes);
+            j.valeur = evaluateur.getValeur();
+            j.valeurEnFrancais = evaluateur.convertirValeurEnFrancais();
+        });
     }
 
     determinerGagnant() {
+        let valeurGagnante = this.joueurs[0].valeur;
+        let indexJoueurGagnant = 0;
 
+        // Trouver l'index du joueur gagnant
+        for (let i = 1; i < this.joueurs.length; i++) {
+            if (this.joueurs[i].valeur > valeurGagnante) {
+                indexJoueurGagnant = i;
+                valeurGagnante = this.joueurs[i].valeur;
+            }
+        }
+
+        let valeurs = document.getElementsByClassName('valeur-francais');
+        for (let i = 0; i < this.joueurs.length; i++) {
+            valeurs[i].innerHTML = this.joueurs[i].valeurEnFrancais;
+        }
+
+        document.querySelector('.gagnant')!.innerHTML = '';
+        document.querySelector('.gagnant')!.innerHTML += `Joueur ${indexJoueurGagnant + 1} est gagnant !`;
+
+        // Todo verifier egalite
+        console.log(this.joueurs[0].valeurEnFrancais);
+        console.log(this.joueurs[1].valeurEnFrancais);
+        console.log(this.joueurs[2].valeurEnFrancais);
+        console.log(this.joueurs[3].valeurEnFrancais);
     }
 
     genererHTML() {
-        console.log(this.joueurs[0].main[0].sorte);
         let src = 'assets/images/';
+
+        // Cartes joueurs
         let joueursDiv = document.getElementsByClassName('joueur');
         for (let i = 0; i < joueursDiv.length; i++) {
-            let cartes = joueursDiv[i].querySelector('span');
-            cartes!.innerHTML = '';
+            let span = joueursDiv[i].querySelector('span');
+            span!.innerHTML = '';
             for (let c = 0; c < this.NB_CARTES_PAR_JOUEURS; c++) {
-                cartes!.innerHTML += `<img class="carte" src="${src + this.joueurs[i].main[c].sorte + '_' + this.joueurs[i].main[c].valeur}.png"/>`;
+                span!.innerHTML += `<img class="carte" src="${src + this.joueurs[i].main[c].sorte + '_' + this.joueurs[i].main[c].valeur}.png"/>`;
             }
+        }
+
+        // Cartes publiques
+        let cartes = this.flop;
+        cartes.push(this.turn);
+        cartes.push(this.river);
+        let tableSpan = document.querySelector('.centre span');
+        tableSpan!.innerHTML = '';
+        for (let i = 0; i < cartes.length; i++) {
+            tableSpan!.innerHTML += `<img class="carte" src="${src + cartes[i].sorte + '_' + cartes[i].valeur}.png"/>`;
         }
     }
 }
